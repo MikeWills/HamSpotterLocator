@@ -626,39 +626,44 @@ async function fetchNominatim(lat, lon) {
 }
 
 async function fetchCrossStreet(lat, lon, nearestRoad) {
-  const radius = 120;
-  const query = `[out:json][timeout:10];
-(
-  way(around:${radius},${lat},${lon})[highway][name];
-  way(around:${radius},${lat},${lon})[highway][ref];
-);
-out tags;`;
+  // Start tight for dense urban areas; expand for suburban/rural until a cross street is found
+  const radii = [100, 200, 400]; // metres: ~330ft, ~660ft, ~¼ mile
   // Lower rank = more significant road; prefer primary/secondary over residential
   const highwayRank = {
     motorway: 1, trunk: 2, primary: 3, secondary: 4, tertiary: 5,
     unclassified: 6, residential: 7, living_street: 8, service: 9
   };
-  try {
-    const res = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      body: 'data=' + encodeURIComponent(query)
-    });
-    if (!res.ok) throw new Error('Overpass HTTP ' + res.status);
-    const data = await res.json();
-    // Keep best (lowest) rank per unique road name
-    const roadMap = {};
-    for (const el of (data.elements || [])) {
-      const name = el.tags.name || el.tags.ref || '';
-      if (!name || name === nearestRoad) continue;
-      const rank = highwayRank[el.tags.highway] ?? 10;
-      if (!(name in roadMap) || rank < roadMap[name]) roadMap[name] = rank;
+  for (const radius of radii) {
+    const query = `[out:json][timeout:10];
+(
+  way(around:${radius},${lat},${lon})[highway][name];
+  way(around:${radius},${lat},${lon})[highway][ref];
+);
+out tags;`;
+    try {
+      const res = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        body: 'data=' + encodeURIComponent(query)
+      });
+      if (!res.ok) throw new Error('Overpass HTTP ' + res.status);
+      const data = await res.json();
+      // Keep best (lowest) rank per unique road name
+      const roadMap = {};
+      for (const el of (data.elements || [])) {
+        const name = el.tags.name || el.tags.ref || '';
+        if (!name || name === nearestRoad) continue;
+        const rank = highwayRank[el.tags.highway] ?? 10;
+        if (!(name in roadMap) || rank < roadMap[name]) roadMap[name] = rank;
+      }
+      const sorted = Object.entries(roadMap).sort((a, b) => a[1] - b[1]);
+      if (sorted.length) return sorted[0][0];
+      // Nothing found at this radius — try the next one
+    } catch(e) {
+      console.error('Overpass cross street:', e);
+      return null;
     }
-    const sorted = Object.entries(roadMap).sort((a, b) => a[1] - b[1]);
-    return sorted.length ? sorted[0][0] : null;
-  } catch(e) {
-    console.error('Overpass cross street:', e);
-    return null;
   }
+  return null;
 }
 
 function haversineMiles(lat1, lon1, lat2, lon2) {

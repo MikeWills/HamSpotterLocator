@@ -4,7 +4,7 @@ A mobile-optimized single-page web app for SKYWARN storm spotters to quickly rep
 
 ## Features
 
-- **Nearest intersection** — Resolves your GPS coordinates to a road name and cross street; cross streets are ranked by OSM highway classification so more significant roads (primary, secondary, tertiary) are preferred over residential streets
+- **Nearest intersection** — Resolves your GPS coordinates to a road name and cross street; cross streets are ranked by OSM highway classification so more significant roads (primary, secondary, tertiary) are preferred over residential streets; search radius adapts to density by starting at 100m and expanding to 200m then 400m until a cross street is found
 - **Nearest city/community** — Finds the closest named place (city, town, village, or hamlet) with distance and compass bearing (e.g. "2.4 mi SW of Skyline"); larger place types are weighted so a nearby city ranks above a closer hamlet or subdivision
 - **County & state** — Displays your current county and state
 - **Maidenhead grid square** — Computes your 8-character ham radio grid locator
