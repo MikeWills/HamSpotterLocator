@@ -29,14 +29,6 @@ A mobile-optimized single-page web app for SKYWARN storm spotters to quickly rep
 
 Open `index.html` from a web server — **do not open directly from disk**. Browsers block cross-origin API requests from `file://` URLs.
 
-For local testing:
-
-```bash
-python3 -m http.server 8080
-```
-
-Then navigate to `http://localhost:8080`.
-
 ## Configuration
 
 At the top of the `<script>` block in `index.html`:
@@ -47,10 +39,6 @@ const NOMINATIM_EMAIL = 'your@email.com';      // Required by OSM usage policy
 ```
 
 Set `NOMINATIM_EMAIL` to your email address as required by the [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/).
-
-## Icon
-
-Place a file named `icon.png` in the same directory as `index.html` to display a custom icon in the header. Any size works; 512×512 is recommended for sharp rendering on high-DPI screens.
 
 ## License
 
