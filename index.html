@@ -485,6 +485,14 @@ const NOMINATIM_EMAIL    = 'your@email.com';   // Required by OSM usage policy
 
 let lastLat = null, lastLon = null, nominatimTimer = null;
 let lastErrorMsg = '';
+let lastUpdateTime = null;
+
+function setUpdatedRow() {
+  if (!lastUpdateTime) return;
+  const next = new Date(lastUpdateTime.getTime() + intervalMinutes * 60 * 1000);
+  document.getElementById('updatedRow').textContent =
+    'Updated ' + formatTime(lastUpdateTime) + '  \u2022  Next ' + formatTime(next);
+}
 
 function setStatus(state, text) {
   document.getElementById('statusDot').className = 'status-dot ' + state;
@@ -604,7 +612,8 @@ async function fetchNominatim(lat, lon) {
       }
     });
 
-    document.getElementById('updatedRow').textContent = 'Updated ' + formatTime(new Date());
+    lastUpdateTime = new Date();
+    setUpdatedRow();
     setStatus('active', 'LIVE');
   } catch(e) {
     console.error('Nominatim:', e);
@@ -617,7 +626,6 @@ async function fetchNominatim(lat, lon) {
 }
 
 async function fetchCrossStreet(lat, lon, nearestRoad) {
-  // Query Overpass for highway nodes within ~100m, find closest road that isn't the same road
   const radius = 120;
   const query = `[out:json][timeout:10];
 (
@@ -625,6 +633,11 @@ async function fetchCrossStreet(lat, lon, nearestRoad) {
   way(around:${radius},${lat},${lon})[highway][ref];
 );
 out tags;`;
+  // Lower rank = more significant road; prefer primary/secondary over residential
+  const highwayRank = {
+    motorway: 1, trunk: 2, primary: 3, secondary: 4, tertiary: 5,
+    unclassified: 6, residential: 7, living_street: 8, service: 9
+  };
   try {
     const res = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
@@ -632,12 +645,16 @@ out tags;`;
     });
     if (!res.ok) throw new Error('Overpass HTTP ' + res.status);
     const data = await res.json();
-    const roads = (data.elements || [])
-      .map(el => el.tags.name || el.tags.ref || '')
-      .filter(n => n && n !== nearestRoad);
-    // Deduplicate
-    const unique = [...new Set(roads)];
-    return unique.length ? unique[0] : null;
+    // Keep best (lowest) rank per unique road name
+    const roadMap = {};
+    for (const el of (data.elements || [])) {
+      const name = el.tags.name || el.tags.ref || '';
+      if (!name || name === nearestRoad) continue;
+      const rank = highwayRank[el.tags.highway] ?? 10;
+      if (!(name in roadMap) || rank < roadMap[name]) roadMap[name] = rank;
+    }
+    const sorted = Object.entries(roadMap).sort((a, b) => a[1] - b[1]);
+    return sorted.length ? sorted[0][0] : null;
   } catch(e) {
     console.error('Overpass cross street:', e);
     return null;
@@ -655,9 +672,12 @@ function haversineMiles(lat1, lon1, lat2, lon2) {
 }
 
 async function fetchNearestPlace(lat, lon) {
+  // Exclude locality — OSM uses it for subdivisions/neighborhoods, not actual towns
   const query = `[out:json][timeout:15];
-node(around:50000,${lat},${lon})[place~"^(city|town|village|hamlet|locality)$"];
+node(around:50000,${lat},${lon})[place~"^(city|town|village|hamlet)$"];
 out body;`;
+  // Weight by place type so a city 5 mi away ranks above a hamlet 0.5 mi away
+  const typePriority = { city: 0.2, town: 0.4, village: 0.7, hamlet: 1.0 };
   try {
     const res = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
@@ -667,8 +687,12 @@ out body;`;
     const data = await res.json();
     const places = (data.elements || []).filter(el => el.tags && el.tags.name);
     if (!places.length) return null;
-    places.forEach(p => { p._dist = haversineMiles(lat, lon, p.lat, p.lon); });
-    places.sort((a, b) => a._dist - b._dist);
+    places.forEach(p => {
+      p._dist = haversineMiles(lat, lon, p.lat, p.lon);
+      const weight = typePriority[p.tags.place] ?? 1.0;
+      p._score = p._dist * weight;
+    });
+    places.sort((a, b) => a._score - b._score);
     const nearest = places[0];
     return { name: nearest.tags.name, lat: nearest.lat, lon: nearest.lon, dist: nearest._dist };
   } catch(e) {
@@ -723,6 +747,7 @@ function applyInterval() {
   if (isNaN(val) || val < 1) return;
   intervalMinutes = val;
   startAutoRefresh();
+  setUpdatedRow();
   document.getElementById('intervalInput').blur();
 }
 
