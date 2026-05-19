@@ -1,6 +1,6 @@
 # Ham Spotter Locator
 
-A mobile-optimized single-page web app for SKYWARN storm spotters to quickly report their position to the National Weather Service.
+A mobile-optimized single-page web app for SKYWARN storm spotters to quickly report their position to the National Weather Service. Yes, this was vibe-coded as an experiement and practice in using AI more for development.
 
 ## Features
 
