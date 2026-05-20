@@ -34,11 +34,13 @@ Open `index.html` from a web server — **do not open directly from disk**. Brow
 At the top of the `<script>` block in `index.html`:
 
 ```js
-let intervalMinutes = 5;                       // Auto-refresh interval in minutes
-const NOMINATIM_EMAIL = 'your@email.com';      // Required by OSM usage policy
+let intervalMinutes = 5; // Auto-refresh interval in minutes
 ```
 
-Set `NOMINATIM_EMAIL` to your email address as required by the [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/).
+`NOMINATIM_EMAIL` is required by the [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/). You have two options:
+
+- **Running locally** — replace `YOUR_EMAIL_HERE` in `index.html` with your email address
+- **Using GitHub Actions for deployment** — add a `NOMINATIM_EMAIL` repository secret in **GitHub → Settings → Secrets and variables → Actions** and the workflow will inject it automatically at deploy time
 
 ## License
 

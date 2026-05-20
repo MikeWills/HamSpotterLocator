@@ -19,6 +19,10 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Inject secrets
+        run: |
+          sed -i "s/YOUR_EMAIL_HERE/${{ secrets.NOMINATIM_EMAIL }}/" index.html
+
       - name: Deploy via rsync
         run: |
           rsync -avz --delete \
