@@ -7,7 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Ham Spotter Locator</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; connect-src https://nominatim.openstreetmap.org https://overpass-api.de; img-src 'self' https://*.tile.openstreetmap.org data:; font-src 'self';">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -473,7 +474,7 @@
 
 </main>
 
-<footer>WX0MIK &nbsp;&middot;&nbsp; Ham Spotter Locator &nbsp;&middot;&nbsp; OpenStreetMap / Nominatim / Overpass &nbsp;&middot;&nbsp; <a href="https://github.com/MikeWills/HamSpotterLocator" target="_blank" style="color:#A0AEC0;">GitHub</a> &nbsp;&middot;&nbsp; v1.7 (2026-05-19)</footer>
+<footer>WX0MIK &nbsp;&middot;&nbsp; Ham Spotter Locator &nbsp;&middot;&nbsp; OpenStreetMap / Nominatim / Overpass &nbsp;&middot;&nbsp; <a href="https://github.com/MikeWills/HamSpotterLocator" target="_blank" style="color:#A0AEC0;">GitHub</a> &nbsp;&middot;&nbsp; v1.8 (2026-05-20)</footer>
 
 <script>
 // =====================================================
@@ -589,8 +590,11 @@ async function fetchNominatim(lat, lon) {
       intersection = (data.display_name || '').split(',').slice(0, 2).join(', ').trim();
     }
 
-    document.getElementById('intersection').innerHTML =
-      intersection || '<span class="placeholder">Road data unavailable</span>';
+    if (intersection) {
+      document.getElementById('intersection').textContent = intersection;
+    } else {
+      document.getElementById('intersection').innerHTML = '<span class="placeholder">Road data unavailable</span>';
+    }
 
     const county = addr.county || addr.state_district || '';
     const state  = addr.state || '';
@@ -812,6 +816,6 @@ if (!navigator.geolocation) {
   startAutoRefresh();
 }
 </script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
 </body>
 </html>
